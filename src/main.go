@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"github.com/fatihbasol/GoGinExample/src/handle"
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
-	fmt.Println("Hello GoGinExample")
+	r := gin.Default()
+	handle.InitRoutes(r)
+
+	r.Run()
 }

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.title}}</title>
+</head>
+<body>
+
+<h1 style="text-align: center; padding-top: 6rem">{{.title}} by <a target="_blank" href="{{.authorUrl}}">{{.author}}</a></h1>
+<br>
+<div style="text-align: center">
+    <h2>Available endpoints</h2>
+    <ul style="list-style-type: none;padding-left: 0;">
+        {{range .endpoints}}
+        <li style="line-height: 2rem; font-size: larger">
+            {{.}}
+        </li>
+        {{end}}
+    </ul>
+</div>
+
+</body>
+</html>
