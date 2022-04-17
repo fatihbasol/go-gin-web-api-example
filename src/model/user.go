@@ -1,9 +1,8 @@
 package model
 
 type User struct {
-	Id            int
-	Name          string
-	Email         string
-	PhoneNumberId int
-	Phone         Phone
+	Id    int `gorm:"primaryKey;autoIncrement"`
+	Name  string
+	Email string
+	Phone Phone
 }

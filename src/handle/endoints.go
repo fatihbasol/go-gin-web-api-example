@@ -12,18 +12,17 @@ const (
 )
 
 func InitRoutes(r *gin.Engine) {
-
 	router := r.Group("/api")
 	{
 		router.GET("/user/:id", GetUser)
 		router.GET("/user", GetUsers)
 		router.POST("/user", PostUser)
-		router.PUT("/user/:id", PutUser)
+		router.PUT("/user/", PutUser)
 
 		router.GET("/phone/:id", GetPhone)
 		router.GET("/phone", GetPhones)
 		router.POST("/phone", PostPhone)
-		router.PUT("/phone/:id", PutPhone)
+		router.PUT("/phone/", PutPhone)
 	}
 
 	r.LoadHTMLGlob("templates/*")
