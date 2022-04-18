@@ -9,6 +9,7 @@ type UserResponseModel struct {
 
 type PhoneResponseModel struct {
 	Id          int    `json:"id"`
+	UserId      int    `json:"user_id"`
 	CountryCode string `json:"country_code"`
 	Number      string `json:"number"`
 }
