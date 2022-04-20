@@ -15,37 +15,32 @@ func MigrateModels(g *gorm.DB) {
 
 func initSeedData(db *gorm.DB) {
 
-	//phoneRecordResult := db.First(&model.Phone{})
-	//if phoneRecordResult.RowsAffected == 0 {
-	//	//OTHER
-	//	phone := model.Phone{Id: 1, UserId: 0, Number: "OTHER", CountryCode: "OTHER"}
-	//	result := db.Create(&phone)
-	//
-	//	if result.Error != nil {
-	//		fmt.Println(result.Error)
-	//	}
-	//}
+	hasTable := db.Migrator().HasTable(&model.User{})
+	if hasTable {
+		var rowCount int64
+		db.Model(&model.User{}).Count(&rowCount)
 
-	result := db.First(&model.User{})
-	if result.RowsAffected == 0 {
-		users := []model.User{
-			{
-				Name: "robert", Email: "robert@robert.com",
-				Phone: model.Phone{
-					Number: "5457778899", CountryCode: "+90",
+		if rowCount == 0 {
+			users := []model.User{
+				{
+					Name: "robert", Email: "robert@robert.com",
+					Phone: &model.Phone{
+						Number: "5457778899", CountryCode: "+90",
+					},
 				},
-			},
-			{
-				Name: "zoe", Email: "zoe@zoe.com",
-				Phone: model.Phone{
-					Number: "5454445566", CountryCode: "+90",
-				}},
-			{
-				Name: "anna", Email: "anna@anna.com",
-				Phone: model.Phone{
-					Number: "5451112233", CountryCode: "+90",
-				}},
+				{
+					Name: "zoe", Email: "zoe@zoe.com",
+					Phone: &model.Phone{
+						Number: "5454445566", CountryCode: "+90",
+					}},
+				{
+					Name: "anna", Email: "anna@anna.com",
+					Phone: &model.Phone{
+						Number: "5451112233", CountryCode: "+90",
+					}},
+			}
+			db.Create(&users)
 		}
-		db.Create(&users)
+
 	}
 }

@@ -4,7 +4,7 @@ type UserResponseModel struct {
 	Id    int                 `json:"id"`
 	Name  string              `json:"name"`
 	Email string              `json:"email"`
-	Phone *PhoneResponseModel `json:"phone,omitempty"`
+	Phone *PhoneResponseModel `json:"phone"`
 }
 
 type PhoneResponseModel struct {

@@ -1,117 +1,100 @@
 package handle
 
 import (
+	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/fatihbasol/GoGinExample/src/data"
 	"github.com/fatihbasol/GoGinExample/src/handle/model/request"
 	"github.com/fatihbasol/GoGinExample/src/handle/model/response"
+	"github.com/fatihbasol/GoGinExample/src/mapper"
 	"github.com/fatihbasol/GoGinExample/src/model"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-	"log"
-	"net/http"
-	"reflect"
-	"strconv"
 )
 
 func GetUser(context *gin.Context) {
-	idParam := context.Param("id")
-	id, _ := strconv.Atoi(idParam)
+	id, err := strconv.Atoi(context.Param("id"))
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
 
 	var user model.User
 	result := data.DB.Preload("Phone").First(&user, id)
 
-	userResponseModel := response.UserResponseModel{Id: user.Id, Name: user.Name, Email: user.Email,
-		Phone: &response.PhoneResponseModel{Id: user.Phone.Id, CountryCode: user.Phone.CountryCode, Number: user.Phone.Number}}
-
-	if result.Error == gorm.ErrRecordNotFound {
-		log.Default().Printf("%s %s: %s", gorm.ErrRecordNotFound.Error(), reflect.TypeOf(user).Name(), idParam)
-		context.JSON(http.StatusNotFound, gin.H{})
+	if result.Error != nil {
+		context.JSON(http.StatusNotFound, gin.H{"err": result.Error.Error()})
 		return
 	}
-	context.JSON(http.StatusOK, userResponseModel)
+
+	responseModel := mapper.MarshalMap[response.UserResponseModel](user)
+
+	context.JSON(http.StatusOK, responseModel)
 }
 func GetUsers(context *gin.Context) {
-	// get from db with  relational data(include phones)
+
 	var users []model.User
-	data.DB.Preload("Phone").Find(&users)
+	result := data.DB.Preload("Phone").Find(&users)
 
-	var usersResponseModel []response.UserResponseModel
-
-	for _, user := range users {
-		usersResponseModel = append(usersResponseModel,
-			response.UserResponseModel{Id: user.Id, Name: user.Name, Email: user.Email,
-				Phone: &response.PhoneResponseModel{Id: user.Phone.Id, CountryCode: user.Phone.CountryCode, Number: user.Phone.Number}})
+	if result.Error != nil {
+		context.JSON(http.StatusNotFound, gin.H{"err": result.Error.Error()})
+		return
 	}
+
+	usersResponseModel := mapper.MarshalMap[[]response.UserResponseModel](users)
 
 	context.JSON(http.StatusOK, usersResponseModel)
 }
 func PostUser(context *gin.Context) {
-	var userModel request.UserRequestModel
-	userModel = request.UserRequestModel{Name: context.PostForm("name"), Email: context.PostForm("email")}
+	requestModel := request.UserRequestModel{Name: context.PostForm("name"), Email: context.PostForm("email")}
 
-	if userModel.Name == "" || userModel.Email == "" {
+	if requestModel.Name == "" || requestModel.Email == "" {
 		context.JSON(http.StatusBadRequest, gin.H{})
 		return
 	}
-	var dbUser = model.User{Name: userModel.Name, Email: userModel.Email}
+
+	var dbUser = mapper.MarshalMap[model.User](requestModel)
 	result := data.DB.Create(&dbUser)
 
 	if result.Error != nil {
-		log.Default().Printf("%s %s: %s", gorm.ErrInvalidData.Error(), reflect.TypeOf(dbUser).Name(), userModel)
-		context.JSON(http.StatusBadRequest, gin.H{})
+		context.JSON(http.StatusNotFound, gin.H{"err": result.Error.Error()})
 		return
 	}
 
-	userResponseModel := response.UserResponseModel{
-		Id:    dbUser.Id,
-		Name:  dbUser.Name,
-		Email: dbUser.Email,
-	}
-	context.JSON(http.StatusOK, userResponseModel)
+	responseModel := mapper.MarshalMap[response.UserResponseModel](dbUser)
+	context.JSON(http.StatusOK, responseModel)
 
 }
 func PutUser(context *gin.Context) {
-	idToPut, err := strconv.Atoi(context.Query("id"))
+	id, err := strconv.Atoi(context.Query("id"))
 	if err != nil {
-		log.Default().Println("Bad request : invalid id")
-		context.JSON(http.StatusBadRequest, gin.H{})
+		context.JSON(http.StatusBadRequest, gin.H{"err": "invalid id"})
 		return
 	}
+
+	requestModel := request.UserRequestModel{Name: context.PostForm("name"), Email: context.PostForm("email")}
+
+	if requestModel.Name == "" || requestModel.Email == "" {
+		context.JSON(http.StatusBadRequest, gin.H{"err": "Fields cannot be empty"})
+		return
+	}
+
 	var dbUser *model.User
-	result := data.DB.First(&dbUser, idToPut)
+	result := data.DB.First(&dbUser, id)
 
 	if result.Error != nil {
-		log.Default().Printf("An error occurred while fetching user: %d", idToPut)
-		context.JSON(http.StatusBadRequest, gin.H{})
-		return
-	}
-	if result.RowsAffected == 0 {
-		log.Default().Printf("Cannot find user: %d", idToPut)
-		context.JSON(http.StatusNotFound, gin.H{})
+		context.JSON(http.StatusBadRequest, gin.H{"err": "user not found"})
 		return
 	}
 
-	if dbUser != nil {
-		name := context.PostForm("name")
-		email := context.PostForm("email")
+	userToUpdate := mapper.MarshalMap[model.User](requestModel)
+	fmt.Println(userToUpdate)
 
-		if name == "" || email == "" {
-			log.Default().Printf("Fields cannot be empty: %d", idToPut)
-			context.JSON(http.StatusBadRequest, gin.H{})
-			return
-		}
-
-		updatedUser := model.User{Id: idToPut}
-		result := data.DB.Model(&updatedUser).Select("name", "email").Updates(model.User{Name: name, Email: email})
-
-		if result.Error != nil {
-			log.Default().Printf("An error occurred while updating user: %d", idToPut)
-			context.JSON(http.StatusBadRequest, gin.H{})
-			return
-		}
-		context.JSON(http.StatusOK, updatedUser)
+	updateResult := data.DB.Model(&dbUser).Select("name", "email").Updates(&userToUpdate)
+	if updateResult.Error != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"err": "An error occurred while updating user"})
 		return
 	}
-
-	context.JSON(http.StatusBadRequest, gin.H{})
+	context.JSON(http.StatusOK, dbUser)
 }

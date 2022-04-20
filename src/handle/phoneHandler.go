@@ -69,11 +69,13 @@ func GetPhones(context *gin.Context) {
 
 }
 func PostPhone(context *gin.Context) {
+	//TODO:
 	context.JSON(http.StatusOK, gin.H{
 		"phone": "postPhone",
 	})
 }
 func PutPhone(context *gin.Context) {
+	//TODO:
 	context.JSON(http.StatusOK, gin.H{
 		"phone": "putPhone",
 	})
