@@ -6,6 +6,7 @@ import (
 
 	"github.com/fatihbasol/GoGinExample/src/data"
 	"github.com/fatihbasol/GoGinExample/src/handle/model/response"
+	"github.com/fatihbasol/GoGinExample/src/mapper"
 	"github.com/fatihbasol/GoGinExample/src/model"
 	"github.com/gin-gonic/gin"
 )
@@ -25,19 +26,10 @@ func GetPhone(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{})
 		return
 	}
-	if result.RowsAffected == 0 {
-		context.JSON(http.StatusNotFound, gin.H{})
-		return
-	}
 
-	context.JSON(http.StatusOK,
-		response.PhoneResponseModel{
-			Id:          phone.Id,
-			UserId:      phone.UserId,
-			Number:      phone.Number,
-			CountryCode: phone.CountryCode,
-		})
+	responseModel := mapper.MarshalMap[response.PhoneResponseModel](phone)
 
+	context.JSON(http.StatusOK, responseModel)
 }
 func GetPhones(context *gin.Context) {
 
@@ -45,25 +37,11 @@ func GetPhones(context *gin.Context) {
 	result := data.DB.Find(&phones)
 
 	if result.Error != nil {
-		context.JSON(http.StatusBadRequest, gin.H{})
-		return
-	}
-	if result.RowsAffected == 0 {
-		context.JSON(http.StatusNotFound, gin.H{})
+		context.JSON(http.StatusBadRequest, gin.H{"err": "Fields cannot be empty"})
 		return
 	}
 
-	responseModel := []response.PhoneResponseModel{}
-
-	for _, v := range phones {
-
-		responseModel = append(responseModel, response.PhoneResponseModel{
-			Id:          v.Id,
-			UserId:      v.UserId,
-			Number:      v.Number,
-			CountryCode: v.CountryCode,
-		})
-	}
+	responseModel := mapper.MarshalMap[[]response.PhoneResponseModel](phones)
 
 	context.JSON(http.StatusOK, responseModel)
 
